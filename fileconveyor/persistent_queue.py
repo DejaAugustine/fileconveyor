@@ -71,14 +71,14 @@ class PersistentQueue(object):
             self.dbcon = sqlite3.connect(DB_HOST, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
             self.dbcur = self.dbcon.cursor()
-            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INTEGER PRIMARY KEY AUTOINCREMENT, item BLOB, key CHAR(32))" % (self.table))
-            self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_key ON %s (key)" % (self.table))
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INTEGER PRIMARY KEY AUTOINCREMENT, item BLOB, item_key CHAR(32))" % (self.table))
+            self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_key ON %s (item_key)" % (self.table))
         elif DB_SOURCE == 'mysql':
             import MySQLdb
             from MySQLdb import IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
             self.dbcur = self.dbcon.cursor()
-            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, key VARCHAR(32), PRIMARY KEY (id), UNIQUE INDEX unique_key (key))" % (self.table))
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, item_key VARCHAR(32), PRIMARY KEY (id), UNIQUE INDEX unique_key (item_key))" % (self.table))
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
@@ -112,7 +112,7 @@ class PersistentQueue(object):
         self.lock.acquire()
         try:
             pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
-            self.dbcur.execute("INSERT INTO %s (item, key) VALUES(?, ?)" % (self.table), (sqlite3.Binary(pickled_item), md5))
+            self.dbcur.execute("INSERT INTO %s (item, item_key) VALUES(?, ?)" % (self.table), (sqlite3.Binary(pickled_item), md5))
         except sqlite3.IntegrityError:
             self.lock.release()
             raise AlreadyExists
@@ -162,7 +162,7 @@ class PersistentQueue(object):
         """necessary to be able to do smart update()s"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcur.execute("SELECT item FROM %s WHERE key = ?" % (self.table), (md5, ))
+        self.dbcur.execute("SELECT item FROM %s WHERE item_key = ?" % (self.table), (md5, ))
         self.lock.release()
 
         result = self.dbcur.fetchone()
@@ -176,13 +176,13 @@ class PersistentQueue(object):
         """necessary to be able to do smart update()s"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcur.execute("SELECT id FROM %s WHERE key = ?" % (self.table), (md5, ))
+        self.dbcur.execute("SELECT id FROM %s WHERE item_key = ?" % (self.table), (md5, ))
         result = self.dbcur.fetchone()
         if result is None:
             self.lock.release()
         else:
             id = result[0]
-            self.dbcur.execute("DELETE FROM %s WHERE key = ?" % (self.table), (md5, ))
+            self.dbcur.execute("DELETE FROM %s WHERE item_key = ?" % (self.table), (md5, ))
             self.dbcon.commit()
             self.size -= 1
             if id >= self.lowest_id_in_queue and id <= self.highest_id_in_queue:
