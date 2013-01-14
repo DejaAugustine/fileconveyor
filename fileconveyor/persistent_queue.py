@@ -25,14 +25,6 @@ import hashlib
 import types
 import threading
 
-if DB_SOURCE == 'sqlite':
-    import sqlite3
-    from sqlite3 import IntegrityError
-elif DB_SOURCE == 'mysql':
-    import MySQLdb
-    from MySQLdb import IntegrityError
-
-
 # Define exceptions.
 class PersistentQueueError(Exception): pass
 class Empty(PersistentQueueError): pass
@@ -71,14 +63,17 @@ class PersistentQueue(object):
 
     def __prepare_db(self, dbfile):
         (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE) = dbfile
-        
+        self.DB_SOURCE = DB_SOURCE
+         
         if DB_SOURCE == 'sqlite':
+            import sqlite3
             self.dbcon = sqlite3.connect(DB_HOST, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
             self.dbcur = self.dbcon.cursor()
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INTEGER PRIMARY KEY AUTOINCREMENT, item BLOB, item_key CHAR(32))" % (self.table))
             self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_key ON %s (item_key)" % (self.table))
         elif DB_SOURCE == 'mysql':
+            import MySQLdb
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
             self.dbcur = self.dbcon.cursor()
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, item_key VARCHAR(32), PRIMARY KEY (id), UNIQUE INDEX unique_key (item_key))" % (self.table))
@@ -109,6 +104,11 @@ class PersistentQueue(object):
         # If no key is given, default to the item itself.
         if key is None:
             key = item
+
+        if self.DB_SOURCE == 'sqlite':
+            from sqlite3 import IntegrityError
+        elif self.DB_SOURCE == 'mysql':
+            from MySQLdb import IntegrityError
 
         # Insert the item into the database.
         md5 = PersistentQueue.__hash_key(key)
