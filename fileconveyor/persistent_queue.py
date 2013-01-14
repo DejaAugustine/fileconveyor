@@ -78,7 +78,7 @@ class PersistentQueue(object):
             from MySQLdb import IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
             self.dbcur = self.dbcon.cursor()
-            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, key CHAR(32), PRIMARY KEY (id), UNIQUE INDEX unique_key (key))" % (self.table))
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, key VARCHAR(32), PRIMARY KEY (id), UNIQUE INDEX unique_key (key))" % (self.table))
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
