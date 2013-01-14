@@ -149,7 +149,7 @@ class PersistentQueue(object):
             # Get the item from the memory queue and immediately delete it
             # from the database.
             (id, item) = self.memory_queue.pop(0)
-            self.dbcur.execute("DELETE FROM %s WHERE id = ?" % (self.table), (id, ))
+            self.dbcur.execute("DELETE FROM %s WHERE id = ?" % (self.table), (id))
             self.dbcon.commit()
             self.size -= 1
 
@@ -162,7 +162,7 @@ class PersistentQueue(object):
         """necessary to be able to do smart update()s"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcur.execute("SELECT item FROM %s WHERE item_key = ?" % (self.table), (md5, ))
+        self.dbcur.execute("SELECT item FROM %s WHERE item_key = ?" % (self.table), (md5))
         self.lock.release()
 
         result = self.dbcur.fetchone()
@@ -176,13 +176,13 @@ class PersistentQueue(object):
         """necessary to be able to do smart update()s"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcur.execute("SELECT id FROM %s WHERE item_key = ?" % (self.table), (md5, ))
+        self.dbcur.execute("SELECT id FROM %s WHERE item_key = ?" % (self.table), (md5))
         result = self.dbcur.fetchone()
         if result is None:
             self.lock.release()
         else:
             id = result[0]
-            self.dbcur.execute("DELETE FROM %s WHERE item_key = ?" % (self.table), (md5, ))
+            self.dbcur.execute("DELETE FROM %s WHERE item_key = ?" % (self.table), (md5))
             self.dbcon.commit()
             self.size -= 1
             if id >= self.lowest_id_in_queue and id <= self.highest_id_in_queue:
@@ -196,7 +196,7 @@ class PersistentQueue(object):
         """update an item in the queue"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcur.execute("SELECT id FROM %s WHERE key = ?" % (self.table), (md5, ))
+        self.dbcur.execute("SELECT id FROM %s WHERE key = ?" % (self.table), (md5))
         result = self.dbcur.fetchone()
 
         if result is None:
@@ -247,7 +247,7 @@ class PersistentQueue(object):
                 min_id = self.lowest_id_in_queue - 1
 
             # Do the actual update.
-            self.dbcur.execute("SELECT id, item FROM %s WHERE id > ? ORDER BY id ASC LIMIT 0,%d " % (self.table, self.max_in_memory - len(self.memory_queue)), (min_id, ))
+            self.dbcur.execute("SELECT id, item FROM %s WHERE id > ? ORDER BY id ASC LIMIT 0,%d " % (self.table, self.max_in_memory - len(self.memory_queue)), (min_id))
             resultList = self.dbcur.fetchall()
             for id, item in resultList:
                 self.memory_queue.append((id, item))
@@ -272,7 +272,7 @@ class PersistentDataManager(object):
 
 
     def list(self, table):
-        self.dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE ?", (table, ))
+        self.dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE ?", (table))
         resultList = self.dbcur.fetchall()
         tables = []
         for row in resultList:
