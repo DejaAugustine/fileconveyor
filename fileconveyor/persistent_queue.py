@@ -25,6 +25,7 @@ import hashlib
 import types
 import threading
 
+IntegrityError = False
 
 # Define exceptions.
 class PersistentQueueError(Exception): pass
@@ -67,7 +68,7 @@ class PersistentQueue(object):
         
         if DB_SOURCE == 'sqlite':
             import sqlite3
-            from sqlite3 import IntegrityError
+            IntegrityError = sqlite3.IntegrityError
             self.dbcon = sqlite3.connect(DB_HOST, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
             self.dbcur = self.dbcon.cursor()
@@ -75,7 +76,7 @@ class PersistentQueue(object):
             self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS unique_key ON %s (item_key)" % (self.table))
         elif DB_SOURCE == 'mysql':
             import MySQLdb
-            from MySQLdb import IntegrityError
+            IntergrityError = MySQLdb.IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
             self.dbcur = self.dbcon.cursor()
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, item_key VARCHAR(32), PRIMARY KEY (id), UNIQUE INDEX unique_key (item_key))" % (self.table))
