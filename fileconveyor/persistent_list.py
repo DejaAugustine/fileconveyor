@@ -41,16 +41,19 @@ class PersistentList(object):
             self.dbcon = sqlite3.connect(DB_HOST, detect_types=sqlite3.PARSE_DECLTYPES|sqlite3.PARSE_COLNAMES)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
             self.dbcur = self.dbcon.cursor()
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INTEGER PRIMARY KEY AUTOINCREMENT, item BLOB)" % (self.table))        
+            self.dbcon.commit()
         elif DB_SOURCE == 'mysql':
             import MySQLdb
             from MySQLdb import IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
             self.dbcur = self.dbcon.cursor()
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INT NOT NULL AUTO_INCREMENT, item BLOB, PRIMARY KEY (id))" % (self.table))        
+            self.dbcon.commit()
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
-        self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(id INTEGER PRIMARY KEY AUTOINCREMENT, item BLOB)" % (self.table))        
-        self.dbcon.commit()
+        
 
 
     def __contains__(self, item):
