@@ -257,8 +257,8 @@ class PersistentQueue(object):
                 min_id = self.lowest_id_in_queue - 1
 
             # Do the actual update.
-            select = "SELECT id, item FROM %s" % (self.table)
-            self.dbcur.execute(select + " WHERE id > %d ORDER BY id ASC LIMIT 0,%d ", (self.max_in_memory - len(self.memory_queue), min_id))
+            select = "SELECT id, item FROM %s WHERE id > %d " % (self.table, self.max_in_memory - len(self.memory_queue))
+            self.dbcur.execute(select + "ORDER BY id ASC LIMIT 0,%d ", (min_id,))
             resultList = self.dbcur.fetchall()
             for id, item in resultList:
                 self.memory_queue.append((id, item))
