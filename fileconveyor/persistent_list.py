@@ -76,7 +76,8 @@ class PersistentList(object):
     def append(self, item):
         # Insert the item into the database.
         pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
-        self.dbcur.execute("INSERT INTO %s (item) VALUES(?)" % (self.table), (sqlite3.Binary(pickled_item)))
+        insert = "INSERT INTO %s" % (self.table)
+        self.dbcur.execute(insert + " (item) VALUES(%s)", (sqlite3.Binary(pickled_item), ))
         self.dbcon.commit()
         id = self.dbcur.lastrowid
         # Insert the item into the in-memory list.
@@ -87,7 +88,8 @@ class PersistentList(object):
         # Delete from the database.
         if self.memory_list.has_key(item):
             id = self.memory_list[item]
-            self.dbcur.execute("DELETE FROM %s WHERE id = ?" % (self.table), (id))
+            delete = "DELETE FROM %s" % (self.table)
+            self.dbcur.execute(delete + " WHERE id = %s", (id, ))
             self.dbcon.commit()        
             # Delete from the in-memory list.
             del self.memory_list[item]
