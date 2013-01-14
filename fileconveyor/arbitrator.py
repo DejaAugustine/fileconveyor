@@ -6,7 +6,6 @@ import stat
 import threading
 import time
 import sys
-import sqlite3
 from UserList import UserList
 import os.path
 import signal
@@ -243,11 +242,23 @@ class Arbitrator(threading.Thread):
         self.__allow_retry()
 
         # Create connection to synced files DB.
-        self.dbcon = sqlite3.connect(SYNCED_FILES_DB)
-        self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
-        self.dbcur = self.dbcon.cursor()
-        self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files(input_file text, transported_file_basename text, url text, server text)")
-        self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS file_unique_per_server ON synced_files (input_file, server)")
+        if DB_SOURCE == 'sqlite':
+            import sqlite3
+            from sqlite3 import IntegrityError
+            self.dbcon = sqlite3.connect(SYNCED_FILES_DB)
+            self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
+            self.dbcur = self.dbcon.cursor()
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files(input_file text, transported_file_basename text, url text, server text)")
+            self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS file_unique_per_server ON synced_files (input_file, server)")
+        elif DB_SOURCE == 'mysql':
+            import MySQLdb
+            from MySQLdb import IntegrityError
+            self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
+            self.dbcur = self.dbcon.cursor()
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), UNIQUE INDEX file_unique_per_server (input_file (512), server))")
+        else:
+            self.logger.error("Invalid DB_SOURCE detected")
+            
         self.dbcon.commit()
         self.dbcur.execute("SELECT COUNT(input_file) FROM synced_files")
         num_synced_files = self.dbcur.fetchone()[0]

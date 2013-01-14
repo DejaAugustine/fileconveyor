@@ -86,7 +86,6 @@ class Config(object):
 
         for source_set in sources:
             for source in source_set:
-                self.logger.error("Source = %s", source.get("name"))
                 name          = Config.__ensure_unicode(source.get("name"))
                 scan_path     = Config.__ensure_unicode(source.get("scanPath"))
                 document_root = Config.__ensure_unicode(source.get("documentRoot"))
