@@ -116,7 +116,7 @@ class PersistentQueue(object):
         try:
             pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
             insert = "INSERT INTO %s" % (self.table)
-            self.dbcur.execute(insert + " (item, item_key) VALUES(?, ?)", [buffer(pickled_item), md5])
+            self.dbcur.execute(insert + " (item, item_key) VALUES(%s, %s)", (buffer(pickled_item), md5))
         except IntegrityError:
             self.lock.release()
             raise AlreadyExists
