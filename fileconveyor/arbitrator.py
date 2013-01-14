@@ -262,7 +262,7 @@ class Arbitrator(threading.Thread):
             from MySQLdb import IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
             self.dbcur = self.dbcon.cursor()
-            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), UNIQUE INDEX file_unique_per_server (input_file (512), server))")
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), UNIQUE INDEX file_unique_per_server (input_file(256), server))")
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
