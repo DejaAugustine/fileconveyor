@@ -115,7 +115,8 @@ class PersistentQueue(object):
         self.lock.acquire()
         try:
             pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
-            self.dbcur.execute("INSERT INTO %s (item, item_key) VALUES(?, ?)" % (self.table), (sqlite3.Binary(pickled_item), md5))
+            insert = "INSERT INTO %s" % (self.table)
+            self.dbcur.execute(insert + " (item, item_key) VALUES(?, ?)", [buffer(pickled_item), md5])
         except IntegrityError:
             self.lock.release()
             raise AlreadyExists
@@ -152,7 +153,8 @@ class PersistentQueue(object):
             # Get the item from the memory queue and immediately delete it
             # from the database.
             (id, item) = self.memory_queue.pop(0)
-            self.dbcur.execute("DELETE FROM %s WHERE id = ?" % (self.table), (id, ))
+            delete = "DELETE FROM %s" % (self.table)
+            self.dbcur.execute(delete + " WHERE id = %s", (id, ))
             self.dbcon.commit()
             self.size -= 1
 
@@ -213,7 +215,7 @@ class PersistentQueue(object):
             id = result[0]
             pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
             update = "UPDATE %s" % (self.table)
-            self.dbcur.execute(update + " SET item = %s WHERE key = %s", (sqlite3.Binary(pickled_item), md5))
+            self.dbcur.execute(update + " SET item = %s WHERE key = %s", (buffer(pickled_item), md5))
             self.dbcon.commit()
 
         if result is not None and id >= self.lowest_id_in_queue and id <= self.highest_id_in_queue:
