@@ -14,7 +14,6 @@ from cssutils import replaceUrls
 
 import logging
 import sys
-import sqlite3
 from urlparse import urljoin
 from settings import *
 
@@ -53,10 +52,12 @@ class CSSURLUpdater(Processor):
 
         # Step 3: verify that each of these files has been synced.
         if DB_SOURCE == 'sqlite':
+            import sqlite3
             synced_files_db = urljoin(sys.path[0] + os.sep, SYNCED_FILES_DB)
             self.dbcon = sqlite3.connect(synced_files_db)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure. 
         elif DB_SOURCE == 'mysql':
+            import MySQLdb
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE, charset='utf8')
         self.dbcur = self.dbcon.cursor()    
         all_synced = True
