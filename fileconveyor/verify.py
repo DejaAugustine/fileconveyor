@@ -1,6 +1,5 @@
 import httplib
 import urlparse
-import sqlite3
 import sys
 from settings import *
 
@@ -8,11 +7,12 @@ num_files_checked = 0
 num_files_invalid = 0
 
 if DB_SOURCE == 'sqlite':
+    import sqlite3
     dbcon = sqlite3.connect(SYNCED_FILES_DB)
     dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
 elif DB_SOURCE == 'mysql':
     import MySQLdb
-    self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
+    dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE)
 else:
     print "Invalid DB_SOURCE detected"
 

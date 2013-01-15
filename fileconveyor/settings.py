@@ -10,6 +10,7 @@ import logging
 DB_SOURCE = 'sqlite'
 PERSISTENT_DATA_DB = './persistent_data.db'
 SYNCED_FILES_DB = './synced_files.db'
+FSMONITOR_DATA_DB = './fsmonitor.db'
 
 # MySQL Database
 # DB_SOURCE = 'mysql'
