@@ -693,7 +693,7 @@ class Arbitrator(threading.Thread):
 
                 processed += 1
 
-    def __hash_key(key):
+    def __hash_key(self, key):
         """generate a uuid key based on the key"""
         if not isinstance(key, types.StringTypes):
             key = str(key)
