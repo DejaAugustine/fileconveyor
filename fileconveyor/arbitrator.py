@@ -9,7 +9,7 @@ import sys
 from UserList import UserList
 import os.path
 import signal
-
+import uuid
 
 FILE_CONVEYOR_PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -265,7 +265,7 @@ class Arbitrator(threading.Thread):
             from MySQLdb import IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE, charset='utf8')
             self.dbcur = self.dbcon.cursor()
-            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), UNIQUE INDEX file_unique_per_server (input_file(200), server(55)))")
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), hash_key VARCHAR(200), UNIQUE INDEX file_unique_per_server (hash_key))")
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
@@ -693,6 +693,13 @@ class Arbitrator(threading.Thread):
 
                 processed += 1
 
+    def __hash_key(key):
+        """generate a uuid key based on the key"""
+        if not isinstance(key, types.StringTypes):
+            key = str(key)
+        
+        uuid = uuid.uuid5(uuid.NAMESPACE_URL, key)
+        return str(uuid)
 
     def __process_db_queue(self):
         processed = 0
@@ -710,7 +717,8 @@ class Arbitrator(threading.Thread):
             if event == FSMonitor.CREATED:
                 try:
                     if self.DB_SOURCE == 'mysql':
-                        self.dbcur.execute("INSERT INTO synced_files VALUES(%s, %s, %s, %s)", (input_file, transported_file_basename, url, server))
+                        hash_key = self.__hash_key(server + ":" + input_file)
+                        self.dbcur.execute("INSERT INTO synced_files VALUES(%s, %s, %s, %s, %s)", (input_file, transported_file_basename, url, server, hash_key))
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("INSERT INTO synced_files VALUES(?, ?, ?, ?)", (input_file, transported_file_basename, url, server))
                     self.dbcon.commit()
@@ -767,7 +775,8 @@ class Arbitrator(threading.Thread):
                         self.logger.info("DB queue -> transport queue (jumped): '%s' to delete its old transported file '%s' on server '%s'." % (input_file, old_transport_file_basename, server))
                 else:
                     if self.DB_SOURCE == 'mysql':
-                        self.dbcur.execute("INSERT INTO synced_files VALUES(%s, %s, %s, %s)", (input_file, transported_file_basename, url, server))
+                        hash_key = self.__hash_key(server + ":" + input_file)
+                        self.dbcur.execute("INSERT INTO synced_files VALUES(%s, %s, %s, %s, %s)", (input_file, transported_file_basename, url, server, hash_key))
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("INSERT INTO synced_files VALUES(?, ?, ?, ?)", (input_file, transported_file_basename, url, server))
                     self.dbcon.commit()
