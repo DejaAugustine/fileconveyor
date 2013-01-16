@@ -10,6 +10,7 @@ from UserList import UserList
 import os.path
 import signal
 import uuid
+import unicodedata
 
 FILE_CONVEYOR_PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -698,6 +699,7 @@ class Arbitrator(threading.Thread):
         if not isinstance(key, types.StringTypes):
             key = str(key)
         
+        key = unicodedata.normalize('NFKD', key).encode('ascii', 'ignore')
         ret = uuid.uuid5(uuid.NAMESPACE_URL, key)
         return str(ret)
 
