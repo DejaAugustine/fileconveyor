@@ -698,8 +698,8 @@ class Arbitrator(threading.Thread):
         if not isinstance(key, types.StringTypes):
             key = str(key)
         
-        uuid = uuid.uuid5(uuid.NAMESPACE_URL, key)
-        return str(uuid)
+        ret = uuid.uuid5(uuid.NAMESPACE_URL, key)
+        return str(ret)
 
     def __process_db_queue(self):
         processed = 0
