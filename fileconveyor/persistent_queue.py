@@ -26,6 +26,8 @@ import types
 import threading
 import logging
 import base64
+import uuid
+import unicodedata
 
 try:
     import MySQLdb
@@ -278,12 +280,13 @@ class PersistentQueue(object):
 
     @classmethod
     def __hash_key(cls, key):
-        """calculate the md5 hash of the key"""
+        """generate a uuid key based on the key"""
         if not isinstance(key, types.StringTypes):
             key = str(key)
         
-        md5 = hashlib.md5(key).hexdigest().decode('ascii')
-        return md5
+        key = unicodedata.normalize('NFKD', key).encode('ascii', 'ignore')
+        ret = uuid.uuid5(uuid.NAMESPACE_URL, key)
+        return str(ret)
 
 
     def __update_memory_queue(self, refresh=False):
