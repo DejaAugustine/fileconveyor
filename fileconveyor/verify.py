@@ -17,8 +17,8 @@ else:
     print "Invalid DB_SOURCE detected"
 
 dbcur = dbcon.cursor()
-num_files = dbcur.execute("SELECT COUNT(*) FROM synced_files").fetchone()[0]
-dbcur.execute("SELECT input_file, url, server FROM synced_files ORDER BY server")
+num_files = dbcur.execute("SELECT COUNT(*) FROM %s" % (DB_PREFIX + 'synced_files')).fetchone()[0]
+dbcur.execute("SELECT input_file, url, server FROM %s ORDER BY server" % (DB_PREFIX + 'synced_files'))
 
 for input_file, url, server in dbcur.fetchall():
     parsed = urlparse.urlparse(url)

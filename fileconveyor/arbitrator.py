@@ -206,23 +206,23 @@ class Arbitrator(threading.Thread):
         # 'filter', 'process', 'transport', 'db' and 'retry' queues. Finally,
         # initialize the 'remaining transporters' dictionary of lists.
         if DB_SOURCE == 'sqlite':
-            persistent_data = (DB_SOURCE, PERSISTENT_DATA_DB, '', '', '', '')
-            fsmonitory_data = (DB_SOURCE, FSMONITOR_DATA_DB, '', '', '', '')
+            persistent_data = (DB_SOURCE, PERSISTENT_DATA_DB, '', '', '', '', '')
+            fsmonitor_data = (FS_DATA_SOURCE, FSMONITOR_DATA_DB, '', '', '', '', '', '')
         elif DB_SOURCE == 'mysql':
-            persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE)
-            fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE)
+            persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX, PERSISTENT_DATA_PREFIX)
+            fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX, FSMONITOR_PREFIX)
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
-        self.pipeline_queue = PersistentQueue("pipeline_queue", persistent_data)
+        self.pipeline_queue = PersistentQueue(DB_PREFIX + PERSISTENT_DATA_PREFIX + "pipeline_queue", persistent_data)
         self.logger.warning("Setup: initialized 'pipeline' persistent queue, contains %d items." % (self.pipeline_queue.qsize()))
-        self.files_in_pipeline =  PersistentList("pipeline_list", persistent_data)
+        self.files_in_pipeline =  PersistentList(DB_PREFIX + PERSISTENT_DATA_PREFIX + "pipeline_list", persistent_data)
         num_files_in_pipeline = len(self.files_in_pipeline)
         self.logger.warning("Setup: initialized 'files_in_pipeline' persistent list, contains %d items." % (num_files_in_pipeline))
-        self.failed_files = PersistentList("failed_files_list", persistent_data)
+        self.failed_files = PersistentList(DB_PREFIX + PERSISTENT_DATA_PREFIX + "failed_files_list", persistent_data)
         num_failed_files = len(self.failed_files)
         self.logger.warning("Setup: initialized 'failed_files' persistent list, contains %d items." % (num_failed_files))
-        self.files_to_delete = PersistentList("files_to_delete_list", persistent_data)
+        self.files_to_delete = PersistentList(DB_PREFIX + PERSISTENT_DATA_PREFIX + "files_to_delete_list", persistent_data)
         num_files_to_delete = len(self.files_to_delete)
         self.logger.warning("Setup: initialized 'files_to_delete' persistent list, contains %d items." % (num_files_to_delete))
         self.discover_queue  = Queue.Queue()
@@ -266,12 +266,12 @@ class Arbitrator(threading.Thread):
             from MySQLdb import IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE, charset='utf8')
             self.dbcur = self.dbcon.cursor()
-            self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), hash_key VARCHAR(200), UNIQUE INDEX file_unique_per_server (hash_key))")
+            self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), hash_key VARCHAR(200), UNIQUE INDEX file_unique_per_server (hash_key))" % (DB_PREFIX + 'synced_files'))
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
         self.dbcon.commit()
-        self.dbcur.execute("SELECT COUNT(input_file) FROM synced_files")
+        self.dbcur.execute("SELECT COUNT(input_file) FROM %s" % (DB_PREFIX + 'synced_files'))
         num_synced_files = self.dbcur.fetchone()[0]
         self.logger.warning("Setup: connected to the synced files DB. Contains metadata for %d previously synced files." % (num_synced_files))
 
@@ -348,7 +348,7 @@ class Arbitrator(threading.Thread):
 
         # Log information about the synced files DB.
         self.dbcon.ping(True)
-        self.dbcur.execute("SELECT COUNT(input_file) FROM synced_files")
+        self.dbcur.execute("SELECT COUNT(input_file) FROM %s" % (DB_PREFIX + 'synced_files'))
         num_synced_files = self.dbcur.fetchone()[0]
         self.logger.warning("synced files DB contains metadata for %d synced files." % (num_synced_files))
 
@@ -488,7 +488,8 @@ class Arbitrator(threading.Thread):
                         # be different from the input file's base name due to
                         # processing.
                         if self.DB_SOURCE == 'mysql':
-                            self.dbcur.execute("SELECT transported_file_basename FROM synced_files WHERE input_file=%s", (input_file, ))
+                            stmt = "SELECT transported_file_basename FROM %s"  % (DB_PREFIX + 'synced_files')
+                            self.dbcur.execute(stmt + " WHERE input_file=%s", (input_file, ))
                         elif self.DB_SOURCE == 'sqlite':
                             self.dbcur.execute("SELECT transported_file_basename FROM synced_files WHERE input_file=?", (input_file, ))
                         result = self.dbcur.fetchone()
@@ -533,7 +534,8 @@ class Arbitrator(threading.Thread):
                                     # will cause a IntegrityError).
                                     if event == FSMonitor.CREATED:
                                         if self.DB_SOURCE == 'mysql':
-                                            self.dbcur.execute("SELECT COUNT(*) FROM synced_files WHERE input_file=%s AND server=%s", (input_file, server))
+                                            stmt = "SELECT COUNT(*) FROM %s" % (DB_PREFIX + 'synced_files')
+                                            self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
                                         elif self.DB_SOURCE == 'sqlite':
                                             self.dbcur.execute("SELECT COUNT(*) FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
                                         file_is_synced = self.dbcur.fetchone()[0] == 1
@@ -720,7 +722,8 @@ class Arbitrator(threading.Thread):
                 try:
                     if self.DB_SOURCE == 'mysql':
                         hash_key = self.__hash_key(server + ":" + input_file)
-                        self.dbcur.execute("INSERT INTO synced_files VALUES(%s, %s, %s, %s, %s)", (input_file, transported_file_basename, url, server, hash_key))
+                        stmt = "INSERT INTO %s" % (DB_PREFIX + 'synced_files')
+                        self.dbcur.execute(stmt + " VALUES(%s, %s, %s, %s, %s)", (input_file, transported_file_basename, url, server, hash_key))
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("INSERT INTO synced_files VALUES(?, ?, ?, ?)", (input_file, transported_file_basename, url, server))
                     self.dbcon.commit()
@@ -728,7 +731,8 @@ class Arbitrator(threading.Thread):
                     self.logger.critical("Database integrity error: %s. Duplicate key: input_file = '%s', server = '%s'." % (e, input_file, server))
             elif event == FSMonitor.MODIFIED:
                 if self.DB_SOURCE == 'mysql':
-                    self.dbcur.execute("SELECT COUNT(*) FROM synced_files WHERE input_file=%s AND server=%s", (input_file, server))
+                    stmt = "SELECT COUNT(*) FROM %s" % (DB_PREFIX + 'synced_files')
+                    self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
                 elif self.DB_SOURCE == 'sqlite':
                     self.dbcur.execute("SELECT COUNT(*) FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
                 if self.dbcur.fetchone()[0] > 0:
@@ -737,7 +741,8 @@ class Arbitrator(threading.Thread):
                     # might be different from the input file's base
                     # name due to processing.
                     if self.DB_SOURCE == 'mysql':
-                        self.dbcur.execute("SELECT transported_file_basename FROM synced_files WHERE input_file=%s AND server=%s", (input_file, server))
+                        stmt = "SELECT transported_file_basename FROM %s" % (DB_PREFIX + 'synced_files')
+                        self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("SELECT transported_file_basename FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
                     old_transport_file_basename = self.dbcur.fetchone()[0]
@@ -745,7 +750,8 @@ class Arbitrator(threading.Thread):
                     # Update the transported_file_basename and url fields for
                     # the input_file that has been transported.
                     if self.DB_SOURCE == 'mysql':
-                        self.dbcur.execute("UPDATE synced_files SET transported_file_basename=%s, url=%s WHERE input_file=%s AND server=%s", (transported_file_basename, url, input_file, server))
+                        stmt = "UPDATE %s" % (DB_PREFIX + 'synced_files')
+                        self.dbcur.execute(stmt + " SET transported_file_basename=%s, url=%s WHERE input_file=%s AND server=%s", (transported_file_basename, url, input_file, server))
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("UPDATE synced_files SET transported_file_basename=?, url=? WHERE input_file=? AND server=?", (transported_file_basename, url, input_file, server))
                     self.dbcon.commit()
@@ -778,13 +784,15 @@ class Arbitrator(threading.Thread):
                 else:
                     if self.DB_SOURCE == 'mysql':
                         hash_key = self.__hash_key(server + ":" + input_file)
-                        self.dbcur.execute("INSERT INTO synced_files VALUES(%s, %s, %s, %s, %s)", (input_file, transported_file_basename, url, server, hash_key))
+                        stmt = "INSERT INTO %s" % (DB_PREFIX + 'synced_files')
+                        self.dbcur.execute(stmt + " VALUES(%s, %s, %s, %s, %s)", (input_file, transported_file_basename, url, server, hash_key))
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("INSERT INTO synced_files VALUES(?, ?, ?, ?)", (input_file, transported_file_basename, url, server))
                     self.dbcon.commit()
             elif event == FSMonitor.DELETED:
                 if self.DB_SOURCE == 'mysql':
-                    self.dbcur.execute("DELETE FROM synced_files WHERE input_file=%s AND server=%s", (input_file, server))
+                    stmt = "DELETE FROM %s" % (DB_PREFIX + 'synced_files')
+                    self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
                 elif self.DB_SOURCE == 'sqlite':
                     self.dbcur.execute("DELETE FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
                 self.dbcon.commit()

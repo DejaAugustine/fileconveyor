@@ -75,11 +75,11 @@ class FSMonitor(threading.Thread):
     EVENTNAMES = {}
     MERGE_EVENTS = {}
 
-    def __init__(self, callback, persistent=False, trigger_events_for_initial_scan=False, ignored_dirs=[], dbdata=("sqlite", "fsmonitor.db", '', '', '', ''), parent_logger=None):
+    def __init__(self, callback, persistent=False, trigger_events_for_initial_scan=False, ignored_dirs=[], dbdata=("sqlite", "fsmonitor.db", '', '', '', '', ''), parent_logger=None):
         self.persistent                      = persistent
         self.trigger_events_for_initial_scan = trigger_events_for_initial_scan
         self.monitored_paths                 = {}
-        (self.DB_SOURCE, self.DB_HOST, self.DB_PORT, self.DB_USERNAME, self.DB_PASSWORD, self.DB_DATABASE) = dbdata
+        (self.DB_SOURCE, self.DB_HOST, self.DB_PORT, self.DB_USERNAME, self.DB_PASSWORD, self.DB_DATABASE, self.DB_PREFIX) = dbdata
         self.dbcon                           = None
         self.dbcur                           = None
         self.pathscanner                     = None
@@ -169,7 +169,7 @@ class FSMonitor(threading.Thread):
             
         # PathScanner.
         if self.persistent == True and self.dbcur is not None:
-            self.pathscanner = PathScanner(self.dbcon, self.DB_SOURCE, self.ignored_dirs, "pathscanner")
+            self.pathscanner = PathScanner(self.dbcon, self.DB_SOURCE, self.ignored_dirs, self.DB_PREFIX + "pathscanner")
 
 
     def trigger_events_for_pathscanner_result(self, monitored_path, event_path, result, discovered_through=None, event_mask=None):

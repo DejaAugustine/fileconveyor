@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<serverset>	
+  <server name="cloudfiles push cdn" transporter="cloudfiles">
+	  <username>username</username>
+	  <api_key>apikeyvalue</api_key>
+	  <container>my-container</container>
+	</server>
+</serverset>
+

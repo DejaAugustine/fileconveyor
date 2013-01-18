@@ -49,7 +49,7 @@ class UpdateForNonExistingKey(PersistentQueueError): pass
 class PersistentQueue(object):
     """a persistent queue with sqlite back-end designed for infinite queues"""
 
-    def __init__(self, table, dbfile=("sqlite", "persistent_queue.db", '', '', '', ''), max_in_memory=100, min_in_memory=50):
+    def __init__(self, table, dbfile=("sqlite", "persistent_queue.db", '', '', '', '', ''), max_in_memory=100, min_in_memory=50):
         self.size = 0
 
         # Initialize the database.
@@ -78,7 +78,7 @@ class PersistentQueue(object):
 
 
     def __prepare_db(self, dbfile):
-        (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE) = dbfile
+        (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX) = dbfile
         self.DB_SOURCE = DB_SOURCE
                 
         if DB_SOURCE == 'sqlite':

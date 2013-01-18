@@ -384,6 +384,46 @@ Constants in Arbitrator.py
 The following constants can be tweaked to change where File Conveyor stores
 its files, or to change its behavior.
 
+DB_SOURCE = 'sqlite'
+  Leave this as 'sqlite' to use the lightweight local data storage provided by
+	SQLite. This can also be changed to 'mysql' in order to use a standard mysql
+	database connection instead.
+PERSISTENT_DATA_DB = './persistent_data.db'
+  Where to store persistent data (pipeline queue, 'files in pipeline' list and
+  'failed files' list). Only used if DB_SOURCE is set to 'sqlite'.
+SYNCED_FILES_DB = './synced_files.db'
+  Where to store the input_file, transported_file_basename, url and server for
+  each synced file. Only used if DB_SOURCE is set to 'sqlite'.
+FSMONITOR_DATA_DB = './fsmonitor.db'
+  Where to store the data for the FS Monitor process. Only used if DB_SOURCE is
+	set to 'sqlite'.
+DB_HOST = 'localhost'
+  The hostname of the MySQL database. Only used if DB_SOURCE is set to 'mysql'.
+DB_PORT = 3306
+  The port used to connect to the MySQL database. Only used if DB_SOURCE is set
+	to 'mysql'. 
+DB_USERNAME = 'user'
+	The MySQL username. Only used if DB_SOURCE is set to 'mysql'.
+DB_PASSWORD = 'pass'
+	The MySQL password. Only used if DB_SOURCE is set to 'mysql'.
+DB_DATABASE = 'fileconveyor'
+  The name of the MySQL database to use. Only used if DB_SOURCE is set to 
+	'mysql'.
+DB_PREFIX = ''
+	A prefix to apply to all of the created MySQL data tables. This can be used to
+	allow fileconveyor to store its data in a shared database without colliding
+	with existing tables. This is applied before any other prefix values. Only used
+	if DB_SOURCE is set to 'mysql'.
+PERSISTENT_DATA_PREFIX = 'one_'
+	The prefix to apply to all persistent data tables. Since MySQL storage allows
+	multiple individual server nodes to share synced file data, this allows each
+	server's persistent data to remain distinct. Only used if DB_SOURCE is set to
+	'mysql'.
+FSMONITOR_PREFIX = 'one_'
+	The prefix to apply to all FSMonitor data tables. Since MySQL storage allows
+	multiple individual server nodes to share synced_file data, this allows each
+	server's FSMonitor data to remain distinct. Only used if DB_SOURCE is set to
+	'mysql'.
 RESTART_AFTER_UNHANDLED_EXCEPTION = True
   Whether File Conveyor should restart itself after it encountered an
   unhandled exception (i.e., a bug).
@@ -393,12 +433,6 @@ RESTART_INTERVAL = 10
   when RESTART_AFTER_UNHANDLED_EXCEPTION == True.
 LOG_FILE = './fileconveyor.log'
   The log file.
-PERSISTENT_DATA_DB = './persistent_data.db'
-  Where to store persistent data (pipeline queue, 'files in pipeline' list and
-  'failed files' list).
-SYNCED_FILES_DB = './synced_files.db'
-  Where to store the input_file, transported_file_basename, url and server for
-  each synced file.
 WORKING_DIR = '/tmp/fileconveyor'
   The working directory.
 MAX_FILES_IN_PIPELINE = 50
@@ -548,6 +582,60 @@ named "ftp push cdn".
   602
   sqlite> SELECT COUNT(*) FROM synced_files WHERE server="ftp push cdn";
   243
+
+
+Understanding MySQL Integration
+-------------------------------
+Using SQLite has one fatal flaw: what happens when you're in a high-availability environment?
+
+Fileconveyor and the accompanying CDN Drupal module rely on the *.db files stored in the filesystem.
+This works really well if your site lives on a single server, but as soon as you introduce a second
+web server into the mix, things get a little more complicated. 
+
+If you have a Drupal site on two web servers (Abe and Barney) that start out with the same files, 
+both running fileconveyor in the standard sqlite mode, they both sync with the CDN and update their 
+individual synced_files.db files and all is well.  However, if a file gets uploaded to Barney, the 
+file goes into Barney's public files folder, gets detected by Barney's FSMonitor, gets uploaded to
+the CDN, and Barney makes a note in his synced_files.db. Drupal also makes a note in the database
+that the file exists and where to find it ... this is where the problem starts.
+
+If a visitor reaches the site on Barney, Drupal says there's this file, calls up the CDN module which
+looks at Barney's synced_files.db and gives Drupal the appropriate address. All is well.
+
+If a visitor reaches the site on Abe, however, Drupal says there's this fall and calls up the CDN module.
+Unfortunately, the CDN module on Abe looks at Abe's synced_files.db and doesn't see any record of the
+file in the CDN. "No Problem!", says Drupal, "I'll just serve up the local copy... wait, what? 404"
+because the file was never uploaded to Abe's public files folder.
+
+This is a problem that's been plaguing Drupal for ages, and there are a number of solutions that
+generally involve either using a network file share (NFS), which is slow and often unreliable, or involve
+running a script to sync the files folders every so often.
+
+Now, the file exists on the CDN already, and there should be no reason that Abe can't just serve up the
+same URL that Barney does, if only there were a way to sync up the synced_files.db data...
+
+Enter MySQL
+
+The MySQL integration moves the synced files data from files stored on each server's local file system to
+a central MySQL database.  For a little extra added goodness, the whole fileconveyor application was
+refactored to make it possible to host all of the data in MySQL, in case you're more comfortable keeping
+all your data under one roof.
+
+The configuration in settings.py should be self explanatory (uncomment the MySQL settings and comment out
+the SQLite settings), but the prefixes bear a little more explanation:
+
+1. The DB_PREFIX setting lets you add a global prefix to all the fileconveyor tables. Since not everyone has
+access to an unlimited number of databases, this setting allows you to store your fileconveyor data in the
+same database right alongside your website without having to worry about colliding table names.
+
+Example: Setting DB_PREFIX to 'mysite_' will generate tables like 'mysite_synced_files'
+
+2. The PERSISTENT_DATA_PREFIX and FSMONITOR_PREFIX are additional prefixes that are inserted between the
+DB_PREFIX and the table name to allow each server to use MySQL even for data that is only relevant to
+each individual server (such as pathscanner or pipeline_queue)
+
+Example: Setting FSMONITOR_PREFIX to 'abe_' will generate tables like 'abe_pathscanner'
+Note: If DB_PREFIX is set to 'mysite_' the above example would look like 'mysite_abe_pathscanner'
 
 
 License

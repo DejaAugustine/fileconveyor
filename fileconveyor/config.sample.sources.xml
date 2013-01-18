@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sourceset>
+	<source name="public" scanPath="/htdocs/pubilc" documentRoot="/htdocs" basePath="/public/" />
+</sourceset>

@@ -19,6 +19,9 @@ FSMONITOR_DATA_DB = './fsmonitor.db'
 # DB_USERNAME = 'user'
 # DB_PASSWORD = 'pass'
 # DB_DATABASE = 'fileconveyor'
+# DB_PREFIX = ''
+# PERSISTENT_DATA_PREFIX = 'a_' # This should be different for each machine
+# FSMONITOR_PREFIX = 'a_' # This should be different for each machine
 
 RESTART_AFTER_UNHANDLED_EXCEPTION = True
 RESTART_INTERVAL = 10

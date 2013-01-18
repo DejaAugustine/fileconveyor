@@ -17,7 +17,7 @@ class PersistentListError(Exception): pass
 class PersistentList(object):
     """a persistent queue with sqlite back-end designed for finite lists"""
 
-    def __init__(self, table, dbfile=("sqlite", "persistent_queue.db")):
+    def __init__(self, table, dbfile=("sqlite", "persistent_queue.db", '', '', '', '', '')):
         # Initialize the database.
         self.dbcon = None
         self.dbcur = None
@@ -33,7 +33,7 @@ class PersistentList(object):
 
 
     def __prepare_db(self, dbfile):
-        (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE) = dbfile
+        (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX) = dbfile
         self.DB_SOURCE = DB_SOURCE
         
         if DB_SOURCE == 'sqlite':
