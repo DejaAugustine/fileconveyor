@@ -30,11 +30,11 @@ class YUICompressor(Processor):
         # Run YUI Compressor on the file.
         (yuicompressor_path, stderr) = self.run_command("which yui-compressor")
         if not yuicompressor_path:
-            # If the yui-compressor command is not found, use the jar file
+            # If the yui-compressor command is not found, use the jar file.
             yuicompressor_path = os.path.join(self.processors_path, "yuicompressor.jar")
             (stdout, stderr) = self.run_command("java -jar %s %s -o %s" % (yuicompressor_path, self.input_file, tmp_file))
         else:
-            # Otherwise, use the yui-compressor command
+            # Otherwise, use the yui-compressor command.
             (stdout, stderr) = self.run_command("%s %s -o %s" % (yuicompressor_path, self.input_file, tmp_file))
         
 
