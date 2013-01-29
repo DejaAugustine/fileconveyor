@@ -255,7 +255,7 @@ class Arbitrator(threading.Thread):
         self.DB_SOURCE = DB_SOURCE
         if self.DB_SOURCE == 'sqlite':
             import sqlite3
-            from sqlite3 import IntegrityError
+            self.IntegrityError = sqlite3.IntegrityError
             self.dbcon = sqlite3.connect(SYNCED_FILES_DB)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
             self.dbcur = self.dbcon.cursor()
@@ -263,7 +263,7 @@ class Arbitrator(threading.Thread):
             self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS file_unique_per_server ON synced_files (input_file, server)")
         elif self.DB_SOURCE == 'mysql':
             import MySQLdb
-            from MySQLdb import IntegrityError
+            self.IntegrityError = MySQLdb.IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE, charset='utf8')
             self.dbcur = self.dbcon.cursor()
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), hash_key VARCHAR(200), UNIQUE INDEX file_unique_per_server (hash_key))" % (DB_PREFIX + 'synced_files'))
@@ -727,7 +727,7 @@ class Arbitrator(threading.Thread):
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("INSERT INTO synced_files VALUES(?, ?, ?, ?)", (input_file, transported_file_basename, url, server))
                     self.dbcon.commit()
-                except sqlite3.IntegrityError, e:
+                except self.IntegrityError, e:
                     self.logger.critical("Database integrity error: %s. Duplicate key: input_file = '%s', server = '%s'." % (e, input_file, server))
             elif event == FSMonitor.MODIFIED:
                 if self.DB_SOURCE == 'mysql':
