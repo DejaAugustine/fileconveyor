@@ -8,7 +8,7 @@ TRANSPORTER_CLASS = "TransporterCloudFiles"
 class TransporterCloudFiles(Transporter):
 
     name              = 'Cloud Files'
-    valid_settings    = ImmutableSet(["username", "api_key", "container"])
+    valid_settings    = ImmutableSet(["username", "api_key", "container", "cname"])
     required_settings = ImmutableSet(["username", "api_key", "container"])
 
 
