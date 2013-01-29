@@ -209,8 +209,8 @@ class Arbitrator(threading.Thread):
             persistent_data = (DB_SOURCE, PERSISTENT_DATA_DB, '', '', '', '', '')
             fsmonitor_data = (FS_DATA_SOURCE, FSMONITOR_DATA_DB, '', '', '', '', '', '')
         elif DB_SOURCE == 'mysql':
-            persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX, PERSISTENT_DATA_PREFIX)
-            fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX, FSMONITOR_PREFIX)
+            persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
+            fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
