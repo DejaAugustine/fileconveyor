@@ -1,6 +1,6 @@
 from transporter import *
 from cumulus.storage import CloudFilesStorage
-
+from urlparse import urlparse, urlunparse
 
 TRANSPORTER_CLASS = "TransporterCloudFiles"
 
@@ -36,3 +36,9 @@ class TransporterCloudFiles(Transporter):
                 raise ConnectionError, "Authentication failed"
             else:
                 raise ConnectionError(e)
+
+    def alter_url(self, url):
+        if "cname" in self.settings:
+            parsed = urlparse(url)
+            url = urlunparse((parsed.scheme, self.settings["cname"], parsed.path, parsed.params, parsed.query, parsed.fragment))
+            
