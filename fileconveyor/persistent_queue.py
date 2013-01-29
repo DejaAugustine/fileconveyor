@@ -282,7 +282,7 @@ class PersistentQueue(object):
     def __hash_key(cls, key):
         """generate a uuid key based on the key"""
         if not isinstance(key, types.StringTypes):
-            key = str(key)
+            key = unicode(key)
         
         key = unicodedata.normalize('NFKD', key).encode('ascii', 'ignore')
         ret = uuid.uuid5(uuid.NAMESPACE_URL, key)
