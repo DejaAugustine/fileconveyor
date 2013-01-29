@@ -40,5 +40,6 @@ class TransporterCloudFiles(Transporter):
     def alter_url(self, url):
         if "cname" in self.settings:
             parsed = urlparse(url)
-            url = urlunparse((parsed.scheme, self.settings["cname"], parsed.path, parsed.params, parsed.query, parsed.fragment))
+            return urlunparse((parsed.scheme, self.settings["cname"], parsed.path, parsed.params, parsed.query, parsed.fragment))
+            
             
