@@ -84,6 +84,7 @@ class PersistentList(object):
             stmt = "INSERT INTO %s (item)" % self.table
             self.dbcur.execute(stmt + " VALUES(%s)", (base64.encodestring(pickled_item), ))
         elif self.DB_SOURCE == 'sqlite':
+            import sqlite3
             self.dbcur.execute("INSERT INTO %s (item) VALUES(?)" % (self.table), (sqlite3.Binary(pickled_item), ))
         self.dbcon.commit()
         id = self.dbcur.lastrowid
