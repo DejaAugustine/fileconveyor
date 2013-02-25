@@ -324,7 +324,7 @@ class PersistentQueue(object):
                 stmt = "SELECT id, item FROM %s" % self.table
                 self.dbcur.execute(stmt + " WHERE id > %s ORDER BY id ASC LIMIT 0,%s", (min_id, upper_limit))
             elif self.DB_SOURCE == 'sqlite':
-                self.dbcur.execute("SELECT id, item FROM %s WHERE id > %s ORDER BY id ASC LIMIT 0,%s " % (self.table), (min_id, upper_limit))
+                self.dbcur.execute("SELECT id, item FROM %s WHERE id > ? ORDER BY id ASC LIMIT 0,%d " % (self.table, upper_limit), (min_id, ))
             resultList = self.dbcur.fetchall()
             for id, item in resultList:
                 if self.DB_SOURCE == 'mysql':
