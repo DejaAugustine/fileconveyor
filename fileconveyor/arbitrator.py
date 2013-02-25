@@ -207,7 +207,7 @@ class Arbitrator(threading.Thread):
         # initialize the 'remaining transporters' dictionary of lists.
         #if DB_SOURCE == 'sqlite':
             persistent_data = ('sqlite', PERSISTENT_DATA_DB, '', '', '', '', '')
-            fsmonitor_data = ('sqlite', FSMONITOR_DATA_DB, '', '', '', '', '', '')
+            fsmonitor_data = ('sqlite', FSMONITOR_DATA_DB, '', '', '', '', '')
         #elif DB_SOURCE == 'mysql':
         #    persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
         #    fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
