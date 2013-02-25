@@ -78,8 +78,9 @@ class PersistentList(object):
     def append(self, item):
         # Insert the item into the database.
         pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
-        self.dbcon.ping(True)
+
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "INSERT INTO %s (item)" % self.table
             self.dbcur.execute(stmt + " VALUES(%s)", (base64.encodestring(pickled_item), ))
         elif self.DB_SOURCE == 'sqlite':
@@ -94,8 +95,9 @@ class PersistentList(object):
         # Delete from the database.
         if self.memory_list.has_key(item):
             id = self.memory_list[item]
-            self.dbcon.ping(True)
+            
             if self.DB_SOURCE == 'mysql':
+                self.dbcon.ping(True)
                 stmt = "DELETE FROM %s" % self.table
                 self.dbcur.execute(stmt + " WHERE id = %s", (id, ))
             elif self.DB_SOURCE == 'sqlite':

@@ -347,7 +347,8 @@ class Arbitrator(threading.Thread):
         self.logger.warning("'files_to_delete' persistent list contains %d items." % (len(self.files_to_delete)))
 
         # Log information about the synced files DB.
-        self.dbcon.ping(True)
+        if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
         self.dbcur.execute("SELECT COUNT(input_file) FROM %s" % (DB_PREFIX + 'synced_files'))
         num_synced_files = self.dbcur.fetchone()[0]
         self.logger.warning("synced files DB contains metadata for %d synced files." % (num_synced_files))
@@ -482,7 +483,9 @@ class Arbitrator(threading.Thread):
                     self.lock.acquire()
                     servers = rule["destinations"].keys()
                     self.remaining_transporters[input_file + str(event) + repr(rule)] = servers
-                    self.dbcon.ping(True)
+                    
+                    if self.DB_SOURCE == 'mysql':
+                        self.dbcon.ping(True)
                     if event == FSMonitor.DELETED:
                         # Look up the transported file's base name. This might
                         # be different from the input file's base name due to
@@ -717,7 +720,9 @@ class Arbitrator(threading.Thread):
             # Commit the result to the database.            
             remove_server_from_remaining_transporters = True
             transported_file_basename = os.path.basename(output_file)
-            self.dbcon.ping(True)
+            if self.DB_SOURCE == 'mysql':
+                self.dbcon.ping(True)
+                
             if event == FSMonitor.CREATED:
                 try:
                     if self.DB_SOURCE == 'mysql':

@@ -101,8 +101,9 @@ class PersistentQueue(object):
 
 
     def __contains__(self, item):
-        self.dbcon.ping(True)
+        
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "SELECT COUNT(item) FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE item = %s", (base64.encodestring(cPickle.dumps(item)), ))
             result = self.dbcur.fetchone()
@@ -137,8 +138,9 @@ class PersistentQueue(object):
         self.lock.acquire()
         try:
             pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
-            self.dbcon.ping(True)
+            
             if self.DB_SOURCE == 'mysql':
+                self.dbcon.ping(True)
                 stmt = "INSERT INTO %s (item, item_key)" % self.table
                 self.dbcur.execute(stmt + " VALUES(%s, %s)", (base64.encodestring(pickled_item), md5))
             elif self.DB_SOURCE == 'sqlite':
@@ -179,8 +181,9 @@ class PersistentQueue(object):
             # Get the item from the memory queue and immediately delete it
             # from the database.
             (id, item) = self.memory_queue.pop(0)
-            self.dbcon.ping(True)
+            
             if self.DB_SOURCE == 'mysql':
+                self.dbcon.ping(True)
                 stmt = "DELETE FROM %s" % self.table
                 self.dbcur.execute(stmt + " WHERE id = %s", (id, ))
             elif self.DB_SOURCE == 'sqlite':
@@ -196,8 +199,9 @@ class PersistentQueue(object):
         """necessary to be able to do smart update()s"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcon.ping(True)
+        
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "SELECT item FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE item_key = %s", (md5, ))
         elif self.DB_SOURCE == 'sqlite':
@@ -220,8 +224,9 @@ class PersistentQueue(object):
         """necessary to be able to do smart update()s"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcon.ping(True)
+        
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "SELECT id FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE item_key = %s", (md5, ))
         elif self.DB_SOURCE == 'sqlite':
@@ -249,8 +254,9 @@ class PersistentQueue(object):
         """update an item in the queue"""
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
-        self.dbcon.ping(True)
+        
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "SELECT id FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE item_key = %s", (md5, ))
         elif self.DB_SOURCE == 'sqlite':
@@ -312,8 +318,9 @@ class PersistentQueue(object):
 
             # Do the actual update.
             upper_limit = self.max_in_memory - len(self.memory_queue)
-            self.dbcon.ping(True)
+            
             if self.DB_SOURCE == 'mysql':
+                self.dbcon.ping(True)
                 stmt = "SELECT id, item FROM %s" % self.table
                 self.dbcur.execute(stmt + " WHERE id > %s ORDER BY id ASC LIMIT 0,%s", (min_id, upper_limit))
             elif self.DB_SOURCE == 'sqlite':
@@ -355,8 +362,9 @@ class PersistentDataManager(object):
 
 
     def list(self, table):
-        self.dbcon.ping(True)
+        
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             self.dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE %s", (table, ))
         elif self.DB_SOURCE == 'sqlite':
             self.dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE ?", (table, ))
@@ -368,6 +376,7 @@ class PersistentDataManager(object):
 
 
     def delete(self, table):
-        self.dbcon.ping(True)
+        if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
         self.dbcur.execute("DROP TABLE '%s'" % (table))
         self.dbcon.commit()

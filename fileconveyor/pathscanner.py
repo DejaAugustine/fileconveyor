@@ -45,11 +45,11 @@ class PathScanner(object):
 
     def __prepare_db(self):
         """prepare the database (create the table structure)"""
-        self.dbcon.ping(True)
         if self.DB_SOURCE == 'sqlite':
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(path text, filename text, mtime integer)" % (self.table))
             self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS file_unique_per_path ON %s (path, filename)" % (self.table))
         elif self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s(path TEXT, filename TEXT, mtime INTEGER, UNIQUE INDEX file_unique_per_path (path(128), filename(128)))" % (self.table))
         self.dbcon.commit()
 
@@ -105,8 +105,8 @@ class PathScanner(object):
         assert type(path) == type(u'.')
 
         # Check if there really isn't any data available for this path.
-        self.dbcon.ping(True)
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "SELECT COUNT(filename) FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE path = %s", (path, ))
         elif self.DB_SOURCE == 'sqlite':
@@ -123,8 +123,8 @@ class PathScanner(object):
         """purge the metadata for a given path and all its subdirectories"""
         assert type(path) == type(u'.')
 
-        self.dbcon.ping(True)
         if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
             stmt = "DELETE FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE path LIKE %s", (path + "%%", ))
         elif self.DB_SOURCE == 'sqlite':
@@ -147,7 +147,9 @@ class PathScanner(object):
         Expected format: a set of (path, filename, mtime) tuples.
         """
 
-        self.dbcon.ping(True)
+        if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
+            
         for row in files:
             # Use INSERT OR REPLACE to let the OS's native file system monitor
             # (inotify on Linux, FSEvents on OS X) run *while* missed events
@@ -169,7 +171,9 @@ class PathScanner(object):
         Expected format: a set of (path, filename) tuples.
         """
 
-        self.dbcon.ping(True)
+        if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
+            
         for row in files:
             if self.DB_SOURCE == 'mysql':
                 stmt = "DELETE FROM %s" % self.table
@@ -204,8 +208,8 @@ class PathScanner(object):
 
         assert type(path) == type(u'.')
         # Fetch the old metadata from the DB.
-        self.dbcon.ping(True)
-        if self.DB_SOURCE == 'mysql':
+        if self.DB_SOURCE == 'mysql': 
+            self.dbcon.ping(True)
             stmt = "SELECT filename, mtime FROM %s" % self.table
             self.dbcur.execute(stmt + " WHERE path = %s", (path, ))
         elif self.DB_SOURCE == 'sqlite':
@@ -310,7 +314,8 @@ class PathScanner(object):
         # If a directory was deleted, we also need to retrieve the filenames
         # and paths of the files within that subtree.
         deleted_tree = Set()
-        self.dbcon.ping(True)
+        if self.DB_SOURCE == 'mysql':
+            self.dbcon.ping(True)
         for deleted_file in result["deleted"]:
             (filename, mtime) = old_files[deleted_file]
             # An mtime of -1 means that this is a directory.
