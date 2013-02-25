@@ -205,24 +205,24 @@ class Arbitrator(threading.Thread):
         # 'files in pipeline' and 'failed files' lists and the 'discover',
         # 'filter', 'process', 'transport', 'db' and 'retry' queues. Finally,
         # initialize the 'remaining transporters' dictionary of lists.
-        if DB_SOURCE == 'sqlite':
-            persistent_data = (DB_SOURCE, PERSISTENT_DATA_DB, '', '', '', '', '')
-            fsmonitor_data = (FS_DATA_SOURCE, FSMONITOR_DATA_DB, '', '', '', '', '', '')
-        elif DB_SOURCE == 'mysql':
-            persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
-            fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
-        else:
-            self.logger.error("Invalid DB_SOURCE detected")
+        #if DB_SOURCE == 'sqlite':
+            persistent_data = ('sqlite', PERSISTENT_DATA_DB, '', '', '', '', '')
+            fsmonitor_data = ('sqlite', FSMONITOR_DATA_DB, '', '', '', '', '', '')
+        #elif DB_SOURCE == 'mysql':
+        #    persistent_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
+        #    fsmonitor_data = (DB_SOURCE, DB_HOST, DB_PORT, DB_USERNAME, DB_PASSWORD, DB_DATABASE, DB_PREFIX)
+        #else:
+        #    self.logger.error("Invalid DB_SOURCE detected")
             
-        self.pipeline_queue = PersistentQueue(DB_PREFIX + PERSISTENT_DATA_PREFIX + "pipeline_queue", persistent_data)
+        self.pipeline_queue = PersistentQueue("pipeline_queue", persistent_data)
         self.logger.warning("Setup: initialized 'pipeline' persistent queue, contains %d items." % (self.pipeline_queue.qsize()))
-        self.files_in_pipeline =  PersistentList(DB_PREFIX + PERSISTENT_DATA_PREFIX + "pipeline_list", persistent_data)
+        self.files_in_pipeline =  PersistentList("pipeline_list", persistent_data)
         num_files_in_pipeline = len(self.files_in_pipeline)
         self.logger.warning("Setup: initialized 'files_in_pipeline' persistent list, contains %d items." % (num_files_in_pipeline))
-        self.failed_files = PersistentList(DB_PREFIX + PERSISTENT_DATA_PREFIX + "failed_files_list", persistent_data)
+        self.failed_files = PersistentList("failed_files_list", persistent_data)
         num_failed_files = len(self.failed_files)
         self.logger.warning("Setup: initialized 'failed_files' persistent list, contains %d items." % (num_failed_files))
-        self.files_to_delete = PersistentList(DB_PREFIX + PERSISTENT_DATA_PREFIX + "files_to_delete_list", persistent_data)
+        self.files_to_delete = PersistentList("files_to_delete_list", persistent_data)
         num_files_to_delete = len(self.files_to_delete)
         self.logger.warning("Setup: initialized 'files_to_delete' persistent list, contains %d items." % (num_files_to_delete))
         self.discover_queue  = Queue.Queue()
