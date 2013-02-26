@@ -73,7 +73,7 @@ class CSSURLUpdater(Processor):
 
             # Get the CDN URL for the given absolute path.
             if DB_SOURCE == 'mysql':
-                stmt = "SELECT url FROM synced_files" % (DB_PREFIX + 'synced_files')
+                stmt = "SELECT url FROM %s" % (DB_PREFIX + 'synced_files')
                 self.dbcur.execute(stmt + " WHERE input_file = %s", (urlstring, ))
             elif DB_SOURCE == 'sqlite':
                 self.dbcur.execute("SELECT url FROM synced_files WHERE input_file=?", (urlstring, ))
