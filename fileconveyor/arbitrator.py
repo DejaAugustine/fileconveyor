@@ -11,7 +11,7 @@ import os.path
 import signal
 import uuid
 import unicodedata
-
+import sqlite3
 
 from sqlite3 import dbapi2 as sqlite
 
@@ -265,7 +265,6 @@ class Arbitrator(threading.Thread):
         # Create connection to synced files DB.
         self.DB_SOURCE = DB_SOURCE
         if self.DB_SOURCE == 'sqlite':
-            import sqlite3
             self.IntegrityError = sqlite3.IntegrityError
             self.dbcon = sqlite3.connect(SYNCED_FILES_DB)
             self.dbcon.text_factory = unicode # This is the default, but we set it explicitly, just to be sure.
