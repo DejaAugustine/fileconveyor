@@ -885,7 +885,11 @@ class Arbitrator(threading.Thread):
                 # The file went all the way through the pipeline, so now it's safe
                 # to remove it from the persistent 'files_in_pipeline' list.
                 self.lock.acquire()
-                self.files_in_pipeline.remove((input_file, event))
+                try:
+                    self.files_in_pipeline.remove((input_file, event))
+                except OperationalError:
+                    unlock_db(PERSISTENT_DATA_DB)
+                    self.files_in_pipeline.remove((input_file, event))
                 self.lock.release()
                 self.logger.warning("Synced: '%s' (%s)." % (input_file, FSMonitor.EVENTNAMES[event]))
 
