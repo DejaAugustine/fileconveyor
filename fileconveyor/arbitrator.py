@@ -964,8 +964,6 @@ class Arbitrator(threading.Thread):
                 
                 processed += 1
             
-            if self.failed_files.lock.locked():
-                self.failed_files.lock.release()
             for item in failed_items:
                 self.failed_files.remove(item)
 
