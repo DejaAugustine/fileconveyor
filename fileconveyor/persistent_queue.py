@@ -61,7 +61,7 @@ class PersistentQueue(object):
         # Update the size property.
         self.dbcur.execute("SELECT COUNT(id) FROM %s" % (self.table))
         self.size = self.dbcur.fetchone()[0]
-        self.dbcur.commit()
+        self.dbcon.commit()
 
 
     def __prepare_db(self, dbfile):
@@ -76,7 +76,7 @@ class PersistentQueue(object):
 
     def __contains__(self, item):
         ret = self.dbcur.execute("SELECT COUNT(item) FROM %s WHERE item=?" % (self.table), (cPickle.dumps(item), )).fetchone()[0]
-        self.dbcur.commit()
+        self.dbcon.commit()
         return ret
 
 
@@ -152,7 +152,7 @@ class PersistentQueue(object):
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
         self.dbcur.execute("SELECT item FROM %s WHERE key = ?" % (self.table), (md5, ))
-        self.dbcur.commit()
+        self.dbcon.commit()
         self.lock.release()
 
         result = self.dbcur.fetchone()
@@ -167,7 +167,7 @@ class PersistentQueue(object):
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
         self.dbcur.execute("SELECT id FROM %s WHERE key = ?" % (self.table), (md5, ))
-        self.dbcur.commit()
+        self.dbcon.commit()
         result = self.dbcur.fetchone()
         if result is None:
             self.lock.release()
@@ -188,7 +188,7 @@ class PersistentQueue(object):
         md5 = PersistentQueue.__hash_key(key)
         self.lock.acquire()
         self.dbcur.execute("SELECT id FROM %s WHERE key = ?" % (self.table), (md5, ))
-        self.dbcur.commit()
+        self.dbcon.commit()
         result = self.dbcur.fetchone()
 
         if result is None:
@@ -240,7 +240,7 @@ class PersistentQueue(object):
 
             # Do the actual update.
             self.dbcur.execute("SELECT id, item FROM %s WHERE id > ? ORDER BY id ASC LIMIT 0,%d " % (self.table, self.max_in_memory - len(self.memory_queue)), (min_id, ))
-            self.dbcur.commit()
+            self.dbcon.commit()
             resultList = self.dbcur.fetchall()
             for id, item in resultList:
                 self.memory_queue.append((id, item))
@@ -266,7 +266,7 @@ class PersistentDataManager(object):
 
     def list(self, table):
         self.dbcur.execute("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE ?", (table, ))
-        self.dbcur.commit()
+        self.dbcon.commit()
         resultList = self.dbcur.fetchall()
         tables = []
         for row in resultList:
