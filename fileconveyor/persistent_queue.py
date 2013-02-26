@@ -57,8 +57,6 @@ class PersistentQueue(object):
         # Locking is necessary to prevent a get() or peek() while an update()
         # is in progress.
         self.lock = threading.Lock()
-        if self.lock.locked():
-            self.lock.release()
 
         # Update the size property.
         self.dbcur.execute("SELECT COUNT(id) FROM %s" % (self.table))
