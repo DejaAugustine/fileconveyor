@@ -255,17 +255,20 @@ class Arbitrator(threading.Thread):
             self.dbcur = self.dbcon.cursor()
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS synced_files(input_file text, transported_file_basename text, url text, server text)")
             self.dbcur.execute("CREATE UNIQUE INDEX IF NOT EXISTS file_unique_per_server ON synced_files (input_file, server)")
+            self.dbcur.commit()
         elif self.DB_SOURCE == 'mysql':
             import MySQLdb
             self.IntegrityError = MySQLdb.IntegrityError
             self.dbcon = MySQLdb.connect(host=DB_HOST, port=DB_PORT, user=DB_USERNAME, passwd=DB_PASSWORD, db=DB_DATABASE, charset='utf8')
             self.dbcur = self.dbcon.cursor()
             self.dbcur.execute("CREATE TABLE IF NOT EXISTS %s (input_file VARCHAR(2048), transported_file_basename VARCHAR(2048), url VARCHAR(2048), server VARCHAR(255), hash_key VARCHAR(200), UNIQUE INDEX file_unique_per_server (hash_key))" % (DB_PREFIX + 'synced_files'))
+            self.dbcur.commit()
         else:
             self.logger.error("Invalid DB_SOURCE detected")
             
-        self.dbcon.commit()
+        
         self.dbcur.execute("SELECT COUNT(input_file) FROM %s" % (DB_PREFIX + 'synced_files'))
+        self.dbcon.commit()
         num_synced_files = self.dbcur.fetchone()[0]
         self.logger.warning("Setup: connected to the synced files DB. Contains metadata for %d previously synced files." % (num_synced_files))
 
@@ -344,6 +347,7 @@ class Arbitrator(threading.Thread):
         if self.DB_SOURCE == 'mysql':
             self.dbcon.ping(True)
         self.dbcur.execute("SELECT COUNT(input_file) FROM %s" % (DB_PREFIX + 'synced_files'))
+        self.dbcur.commit()
         num_synced_files = self.dbcur.fetchone()[0]
         self.logger.warning("synced files DB contains metadata for %d synced files." % (num_synced_files))
 
@@ -487,8 +491,10 @@ class Arbitrator(threading.Thread):
                         if self.DB_SOURCE == 'mysql':
                             stmt = "SELECT transported_file_basename FROM %s"  % (DB_PREFIX + 'synced_files')
                             self.dbcur.execute(stmt + " WHERE input_file=%s", (input_file, ))
+                            self.dbcur.commit()
                         elif self.DB_SOURCE == 'sqlite':
                             self.dbcur.execute("SELECT transported_file_basename FROM synced_files WHERE input_file=?", (input_file, ))
+                            self.dbcur.commit()
                         result = self.dbcur.fetchone()
 
                     if event == FSMonitor.DELETED and not result is None:
@@ -533,8 +539,10 @@ class Arbitrator(threading.Thread):
                                         if self.DB_SOURCE == 'mysql':
                                             stmt = "SELECT COUNT(*) FROM %s" % (DB_PREFIX + 'synced_files')
                                             self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
+                                            self.dbcur.commit()
                                         elif self.DB_SOURCE == 'sqlite':
                                             self.dbcur.execute("SELECT COUNT(*) FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
+                                            self.dbcur.commit()
                                         file_is_synced = self.dbcur.fetchone()[0] == 1
                                     if event == FSMonitor.CREATED and file_is_synced:
                                         self.logger.info("Filtering: not processing '%s' for server '%s', because it has been synced already to this server (rule: '%s')." % (input_file, server, rule["label"]))
@@ -732,8 +740,10 @@ class Arbitrator(threading.Thread):
                 if self.DB_SOURCE == 'mysql':
                     stmt = "SELECT COUNT(*) FROM %s" % (DB_PREFIX + 'synced_files')
                     self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
+                    self.dbcur.commit()
                 elif self.DB_SOURCE == 'sqlite':
                     self.dbcur.execute("SELECT COUNT(*) FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
+                    self.dbcur.commit()
                 if self.dbcur.fetchone()[0] > 0:
 
                     # Look up the transported file's base name. This
@@ -742,8 +752,10 @@ class Arbitrator(threading.Thread):
                     if self.DB_SOURCE == 'mysql':
                         stmt = "SELECT transported_file_basename FROM %s" % (DB_PREFIX + 'synced_files')
                         self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (input_file, server))
+                        self.dbcur.commit()
                     elif self.DB_SOURCE == 'sqlite':
                         self.dbcur.execute("SELECT transported_file_basename FROM synced_files WHERE input_file=? AND server=?", (input_file, server))
+                        self.dbcur.commit()
                     old_transport_file_basename = self.dbcur.fetchone()[0]
 
                     # Update the transported_file_basename and url fields for

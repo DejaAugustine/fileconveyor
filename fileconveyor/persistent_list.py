@@ -73,7 +73,10 @@ class PersistentList(object):
         # Delete from the database.
         if self.memory_list.has_key(item):
             id = self.memory_list[item]
-            self.dbcur.execute("DELETE FROM %s WHERE id = ?" % (self.table), (id, ))
-            self.dbcon.commit()        
-            # Delete from the in-memory list.
-            del self.memory_list[item]
+            try:
+                self.dbcur.execute("DELETE FROM %s WHERE id = ?" % (self.table), (id, ))
+                self.dbcon.commit()        
+                # Delete from the in-memory list.
+                del self.memory_list[item]
+            except OperationalError:
+                

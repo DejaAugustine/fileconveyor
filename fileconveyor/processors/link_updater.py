@@ -75,8 +75,10 @@ class CSSURLUpdater(Processor):
             if DB_SOURCE == 'mysql':
                 stmt = "SELECT url FROM %s" % (DB_PREFIX + 'synced_files')
                 self.dbcur.execute(stmt + " WHERE input_file = %s", (urlstring, ))
+                self.dbcur.commit()
             elif DB_SOURCE == 'sqlite':
                 self.dbcur.execute("SELECT url FROM synced_files WHERE input_file=?", (urlstring, ))
+                self.dbcur.commit()
             result = self.dbcur.fetchone()
 
             if result == None:
@@ -143,6 +145,8 @@ class CSSURLUpdater(Processor):
             self.dbcon.ping(True)
             stmt = "SELECT url FROM %s" % (DB_PREFIX + 'synced_files')
             self.dbcur.execute(stmt + " WHERE input_file=%s AND server=%s", (urlstring, self.process_for_server))
+            self.dbcur.commit()
         elif DB_SOURCE == 'sqlite':
             self.dbcur.execute("SELECT url FROM synced_files WHERE input_file=? AND server=?", (urlstring, self.process_for_server))
+            self.dbcur.commit()
         return self.dbcur.fetchone()[0]
