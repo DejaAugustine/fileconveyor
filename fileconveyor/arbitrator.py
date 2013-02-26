@@ -236,6 +236,7 @@ class Arbitrator(threading.Thread):
                 self.pipeline_queue.put(item)
             except AlreadyExists:
                 pipelined_items.remove(item)
+                key = item
                 if not isinstance(key, types.StringTypes):
                     key = str(key)
                 md5 = hashlib.md5(key.encode('utf-8')).hexdigest().decode('ascii')
@@ -942,6 +943,7 @@ class Arbitrator(threading.Thread):
                     self.pipeline_queue.put(item)
                 except AlreadyExists:
                     failed_items.remove(item)
+                    key = item
                     if not isinstance(key, types.StringTypes):
                         key = str(key)
                     md5 = hashlib.md5(key.encode('utf-8')).hexdigest().decode('ascii')
