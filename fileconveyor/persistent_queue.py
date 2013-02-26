@@ -101,15 +101,13 @@ class PersistentQueue(object):
         try:
             pickled_item = cPickle.dumps(item, cPickle.HIGHEST_PROTOCOL)
             self.dbcur.execute("INSERT INTO %s (item, key) VALUES(?, ?)" % (self.table), (sqlite3.Binary(pickled_item), md5))
+            self.dbcon.commit()
+            self.size += 1
+            self.has_new_data = True
         except sqlite3.IntegrityError:
-            self.lock.release()
             raise AlreadyExists
-        self.dbcon.commit()
-        self.size += 1
-
-        self.has_new_data = True
-
-        self.lock.release()
+        finally:
+            self.lock.release()   
 
 
     def peek(self):
