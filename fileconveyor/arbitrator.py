@@ -12,6 +12,15 @@ import signal
 import uuid
 import unicodedata
 
+
+from sqlite3 import dbapi2 as sqlite
+
+def unlock_db(db_filename):
+    """Replace db_filename with the name of the SQLite database."""
+    connection = sqlite.connect(db_filename)
+    connection.commit()
+    connection.close()
+
 FILE_CONVEYOR_PATH = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -205,6 +214,8 @@ class Arbitrator(threading.Thread):
         # 'files in pipeline' and 'failed files' lists and the 'discover',
         # 'filter', 'process', 'transport', 'db' and 'retry' queues. Finally,
         # initialize the 'remaining transporters' dictionary of lists.
+        unlock_db(PERSISTENT_DATA_DB)
+        
         self.pipeline_queue = PersistentQueue("pipeline_queue", PERSISTENT_DATA_DB)
         self.logger.warning("Setup: initialized 'pipeline' persistent queue, contains %d items." % (self.pipeline_queue.qsize()))
         self.files_in_pipeline =  PersistentList("pipeline_list", PERSISTENT_DATA_DB)
@@ -953,6 +964,8 @@ class Arbitrator(threading.Thread):
                 
                 processed += 1
             
+            if self.failed_files.lock.locked():
+                self.failed_files.lock.release()
             for item in failed_items:
                 self.failed_files.remove(item)
 
