@@ -14,6 +14,7 @@ import unicodedata
 import sqlite3
 
 from sqlite3 import dbapi2 as sqlite
+from sqlite3 import OperationalError
 
 def unlock_db(db_filename):
     """Replace db_filename with the name of the SQLite database."""
