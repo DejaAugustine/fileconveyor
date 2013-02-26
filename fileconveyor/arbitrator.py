@@ -247,8 +247,14 @@ class Arbitrator(threading.Thread):
                 self.pipeline_queue.put(item)
             except AlreadyExists:
                 pipelined_items.remove(item)
+                
         for item in pipelined_items:
-            self.files_in_pipeline.remove(item)
+            try:
+                self.files_in_pipeline.remove(item)
+            except OperationalError:
+                unlock_db(PERSISTENT_DATA_DB)
+                self.files_in_pipeline.remove(item)
+                
         self.logger.warning("Setup: moved %d items from the 'files_in_pipeline' persistent list into the 'pipeline' persistent queue." % (num_files_in_pipeline))
 
         # Move files from the 'failed_files' persistent list to the
@@ -965,7 +971,11 @@ class Arbitrator(threading.Thread):
                 processed += 1
             
             for item in failed_items:
-                self.failed_files.remove(item)
+                try:
+                    self.failed_files.remove(item)
+                except OperationalError:
+                    unlock_db(PERSISTENT_DATA_DB)
+                    self.failed_files.remove(item)
 
             self.last_retry = time.time()
 
