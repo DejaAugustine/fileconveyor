@@ -235,7 +235,8 @@ class Arbitrator(threading.Thread):
             try:
                 self.pipeline_queue.put(item)
             except AlreadyExists:
-                self.pipeline_queue.lock.release()
+                if self.pipeline_queue.lock.locked():
+                    self.pipeline_queue.lock.release()
                 pipelined_items.remove(item)
                 key = item
                 if not isinstance(key, types.StringTypes):
@@ -943,7 +944,8 @@ class Arbitrator(threading.Thread):
                 try:
                     self.pipeline_queue.put(item)
                 except AlreadyExists:
-                    self.pipeline_queue.lock.release()
+                    if self.pipeline_queue.lock.locked():
+                        self.pipeline_queue.lock.release()
                     failed_items.remove(item)
                     key = item
                     if not isinstance(key, types.StringTypes):
